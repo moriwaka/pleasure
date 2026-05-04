@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ちょっと気持ちいい</title>
+  <style>
+    :root {
+      --bg1: #0f172a;
+      --bg2: #1e293b;
+      --panel: rgba(255,255,255,0.9);
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #2563eb;
+      --shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,0.35), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(16,185,129,0.28), transparent 26%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.18);
+      backdrop-filter: blur(12px);
+      border-radius: 24px;
+      padding: 28px;
+      color: #f8fafc;
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      line-height: 1.2;
+    }
+
+    .sub {
+      margin: 0;
+      color: rgba(248,250,252,0.9);
+      line-height: 1.7;
+    }
+
+    .controls {
+      margin-top: 18px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: #f8fafc;
+      color: #0f172a;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.28);
+    }
+
+    .summary {
+      font-size: 0.95rem;
+      color: rgba(248,250,252,0.95);
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .cards {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      position: relative;
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.4);
+      overflow: hidden;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 8px;
+      background: var(--line-color, linear-gradient(90deg, #60a5fa, #34d399));
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+      margin-top: 6px;
+    }
+
+    .num {
+      font-size: 0.92rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--badge-color, #2563eb);
+      white-space: nowrap;
+    }
+
+    .title {
+      font-size: 1.3rem;
+      line-height: 1.35;
+      margin: 12px 0 10px;
+    }
+
+    .desc {
+      margin: 0;
+      line-height: 1.8;
+      color: #1f2937;
+      flex: 1;
+    }
+
+    .foot {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .note {
+      margin-top: 16px;
+      color: rgba(248,250,252,0.85);
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 900px) {
+      .cards {
+        grid-template-columns: 1fr;
+      }
+      .card {
+        min-height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>ちょっと気持ちいい</h1>
+      <p class="sub">
+        ちょっと気持ちいいことのアイデア3選。抽選ボタンで引き直せます。
+      </p>
+      <div class="controls">
+        <button id="drawButton">3枚を抽選</button>
+        <div id="summary" class="summary">抽選中…</div>
+      </div>
+    </section>
+
+    <section id="cards" class="cards" aria-live="polite"></section>
+  </div>
+
+  <script>
+    const categoryMeta = {
+      A: { label: '身体感覚系', color: '#2563eb', line: 'linear-gradient(90deg, #60a5fa, #2563eb)' },
+      B: { label: '呼吸・自律神経系', color: '#0f766e', line: 'linear-gradient(90deg, #2dd4bf, #0f766e)' },
+      C: { label: '感覚刺激系', color: '#7c3aed', line: 'linear-gradient(90deg, #c084fc, #7c3aed)' },
+      D: { label: '報酬・達成感系', color: '#ea580c', line: 'linear-gradient(90deg, #fb923c, #ea580c)' },
+      E: { label: '注意・認知系', color: '#4338ca', line: 'linear-gradient(90deg, #818cf8, #4338ca)' },
+      F: { label: '環境操作系', color: '#0891b2', line: 'linear-gradient(90deg, #67e8f9, #0891b2)' },
+      G: { label: '食事・味覚系', color: '#b45309', line: 'linear-gradient(90deg, #fbbf24, #b45309)' },
+      H: { label: '運動・筋肉系', color: '#dc2626', line: 'linear-gradient(90deg, #fca5a5, #dc2626)' },
+      I: { label: '社会的・言語的快感', color: '#4f46e5', line: 'linear-gradient(90deg, #a5b4fc, #4f46e5)' },
+      J: { label: '睡眠・休息系', color: '#059669', line: 'linear-gradient(90deg, #6ee7b7, #059669)' },
+      K: { label: '知的快感・収集欲系', color: '#1d4ed8', line: 'linear-gradient(90deg, #93c5fd, #1d4ed8)' },
+      L: { label: 'ちょっと変わった快感', color: '#be185d', line: 'linear-gradient(90deg, #f9a8d4, #be185d)' }
+    };
+
+    const tips = [
+      { id: 1, category: 'A', title: '首の後ろを温める', desc: '首の後ろを蒸しタオルなどで温めてみましょう。首まわりの緊張がゆるみ、安心感と脱力感が出やすくなります。' },
+      { id: 2, category: 'A', title: '目の周囲を温める', desc: '目の周囲を温かいタオルなどで包んでみましょう。目元のこわばりがやわらぎ、ほどけるような感覚が出やすくなります。' },
+      { id: 3, category: 'A', title: '耳を温める', desc: '耳全体を手のひらで包んで温めてみましょう。耳まわりの血流と触覚刺激で、静かな落ち着きが出やすくなります。' },
+      { id: 4, category: 'A', title: '足裏をボールで転がす', desc: '足裏でテニスボールなどをゆっくり転がしてみましょう。足裏の圧刺激が心地よく、こわばりがほぐれやすくなります。' },
+      { id: 5, category: 'A', title: '頭皮をゆっくり動かす', desc: '指の腹で頭皮を前後左右にゆっくり動かしてみましょう。頭まわりの緊張がゆるみ、すっきりした感覚が出やすくなります。' },
+      { id: 6, category: 'A', title: '鎖骨の下を軽くなでる', desc: '鎖骨の下を軽くなでてみましょう。胸まわりの緊張がやわらぎ、呼吸が少し深く感じられます。' },
+      { id: 7, category: 'A', title: '肩甲骨の内側を温める', desc: '肩甲骨の内側を温めてみましょう。背中のこわばりがゆるみ、眠気に近い快い脱力感が出やすくなります。' },
+      { id: 8, category: 'A', title: '温めた手で顔を包む', desc: '手のひらをこすって温め、顔をやさしく包んでみましょう。顔まわりの緊張がやわらぎ、安心感が生まれやすくなります。' },
+      { id: 9, category: 'A', title: '湯船で浮力を意識する', desc: '湯船の中で腕や脚が少し浮く感覚を意識してみましょう。身体の重さから解放され、入浴の心地よさが増します。' },
+      { id: 10, category: 'A', title: '温冷交代を軽く使う', desc: '温かいシャワーのあとに、手足へぬるめの水を少し当ててみましょう。温度差の刺激で、さっぱりした爽快感が出やすくなります。' },
+
+      { id: 11, category: 'B', title: '長い息を吐く', desc: '吸う時間よりも長く息を吐いてみましょう。吐く動作は身体を休息寄りに切り替えやすく、落ち着きにつながります。' },
+      { id: 12, category: 'B', title: 'ため息を意図的に使う', desc: '深く吸ってから、声を少し混ぜて長く吐いてみましょう。ため息に近い動きで緊張が抜け、身体がゆるみやすくなります。' },
+      { id: 13, category: 'B', title: 'ハミングする', desc: '口を閉じて低くハミングしてみましょう。喉や胸に伝わる振動が、安心感と落ち着きを生みやすくなります。' },
+      { id: 14, category: 'B', title: '鼻呼吸だけで散歩する', desc: '口を閉じて、鼻呼吸だけでゆっくり歩いてみましょう。呼吸のリズムが整い、気分が静まりやすくなります。' },
+      { id: 15, category: 'B', title: '片鼻呼吸をする', desc: '片方の鼻を軽く押さえて、ゆっくり呼吸してみましょう。呼吸への注意が深まり、気持ちが落ち着きやすくなります。' },
+      { id: 16, category: 'B', title: '吐きながら肩を落とす', desc: '息を吐くタイミングで肩をすとんと落としてみましょう。呼吸と脱力が重なり、肩まわりの力が抜けやすくなります。' },
+      { id: 17, category: 'B', title: 'あくびを誘発する', desc: '口を大きく開けて、喉の奥を広げるようにしてみましょう。あくびのあとの涙目や脱力感が、軽い快さにつながります。' },
+
+      { id: 18, category: 'C', title: 'ASMR的な音を使う', desc: '紙をめくる音や雨音など、細かな音を静かに聴いてみましょう。音への注意が狭まり、ぞわっとした心地よさが出ることがあります。' },
+      { id: 19, category: 'C', title: '白色雑音やピンクノイズを流す', desc: '雨音や換気扇のような一定の音を小さく流してみましょう。音のムラが少ないため、頭が落ち着きやすくなります。' },
+      { id: 20, category: 'C', title: '低音を身体で感じる', desc: '低音がゆっくり響く音楽を小さめに流してみましょう。耳だけでなく身体にも振動が伝わり、独特の気持ちよさが出ます。' },
+      { id: 21, category: 'C', title: '手触りのよい布を触る', desc: '毛布や起毛素材など、好きな手触りの布をゆっくり触ってみましょう。触覚が満たされ、安心に近い快さが出やすくなります。' },
+      { id: 22, category: 'C', title: '冷たい金属を触る', desc: '金属のスプーンやペンを短時間だけ触ってみましょう。ひんやりした刺激がはっきりして、気分の切り替えになります。' },
+      { id: 23, category: 'C', title: '香りを温度と組み合わせる', desc: '温かい飲み物の湯気や風呂上がりの香りをゆっくり感じてみましょう。嗅覚と温かさが重なり、満足感が高まりやすくなります。' },
+      { id: 24, category: 'C', title: '食感に集中する', desc: 'ナッツや炭酸など、食感がはっきりしたものをゆっくり味わってみましょう。味だけでなく触覚も働き、感覚の楽しさが増します。' },
+      { id: 25, category: 'C', title: '炭酸水をゆっくり飲む', desc: '炭酸水を少しずつ飲んでみましょう。舌や喉への細かな刺激が、軽い爽快感につながります。' },
+      { id: 26, category: 'C', title: 'ミント系の冷感を使う', desc: 'ミントガムやハッカの香りを少し使ってみましょう。鼻や口の冷感がはっきりして、気分が切り替わりやすくなります。' },
+      { id: 27, category: 'C', title: '暗い部屋で一点の光を見る', desc: '部屋を少し暗くして、小さな間接照明を眺めてみましょう。視覚刺激が減るため、光そのものが落ち着いて感じられます。' },
+
+      { id: 28, category: 'D', title: '小さい未完了タスクを一つ終わらせる', desc: 'すぐ終わる小さな用事を一つだけ片づけてみましょう。完了した感覚が脳の報酬になり、気分が少し軽くなります。' },
+      { id: 29, category: 'D', title: 'チェックリストに済マークをつける', desc: '終えたことにチェックを入れてみましょう。進んだことが目に見えるため、達成感が出やすくなります。' },
+      { id: 30, category: 'D', title: '古い不要物を一つ捨てる', desc: '使っていないものを一つだけ手放してみましょう。目に入る情報が減り、気持ちがすっきりしやすくなります。' },
+      { id: 31, category: 'D', title: '積読や未視聴リストを整理する', desc: '読もうと思っている本や見たい作品を少し並べ替えてみましょう。選びやすくなるだけで、頭の中が整った感じが出ます。' },
+      { id: 32, category: 'D', title: '簡単な反復作業を短時間やる', desc: '靴を磨く、机を拭くなどの単純作業を短時間だけしてみましょう。一定の動きに集中でき、静かな没入感が出ます。' },
+      { id: 33, category: 'D', title: '文章を少し整える', desc: 'メモや文章の行を少し整えてみましょう。乱れていたものが見やすくなると、秩序が生まれた快さを感じやすくなります。' },
+      { id: 34, category: 'D', title: 'ファイル名を統一する', desc: '写真や書類の名前を少しだけそろえてみましょう。探しやすさが増し、整理された感じが気持ちよさにつながります。' },
+      { id: 35, category: 'D', title: '昔の自分のメモを読み返す', desc: '昔のメモや日記を少し読み返してみましょう。考えや経験の蓄積を感じられ、静かな満足感が出やすくなります。' },
+
+      { id: 36, category: 'E', title: '一つの音だけを追う', desc: '音楽の中のベースやドラムなど、一つの音だけを追ってみましょう。注意が一点に集まり、没入感が強まります。' },
+      { id: 37, category: 'E', title: '視界の周辺に注意を向ける', desc: '一点を見つめず、視界の端までぼんやり感じてみましょう。集中の力みが抜け、緊張が下がりやすくなります。' },
+      { id: 38, category: 'E', title: '目を閉じて手の位置を感じる', desc: '目を閉じて、自分の手や指の位置を感じてみましょう。身体の実感がはっきりして、不思議な落ち着きが出ます。' },
+      { id: 39, category: 'E', title: '時計を見ずに1分を当てる', desc: '時計を見ずに、心の中で1分を測ってみましょう。時間感覚に集中する小さな遊びになり、当たると少しうれしくなります。' },
+      { id: 40, category: 'E', title: '記憶だけで部屋の配置を思い出す', desc: '目を閉じて、部屋の物の位置を思い出してみましょう。記憶の中を探索する感覚が、軽い知的満足になります。' },
+      { id: 41, category: 'E', title: '懐かしい場所を地図で辿る', desc: '昔よく行った場所を地図でゆっくり辿ってみましょう。記憶と場所の感覚が結びつき、懐かしい快さが出やすくなります。' },
+      { id: 42, category: 'E', title: '昔よく聴いた曲を一曲だけ聴く', desc: '昔よく聴いた曲を一曲だけ選んで聴いてみましょう。記憶と音の予測が重なり、強い心地よさが戻りやすくなります。' },
+      { id: 43, category: 'E', title: '知らない単語を一つ調べる', desc: '気になった言葉を一つだけ調べてみましょう。わからないものが少しわかる感覚が、知的な快さになります。' },
+      { id: 44, category: 'E', title: '難しすぎないパズルを解く', desc: '少し考えれば解けそうなパズルを一つ解いてみましょう。負荷がほどよいと、解けたときの満足感が出やすくなります。' },
+
+      { id: 45, category: 'F', title: '部屋の照明を一段暗くする', desc: '部屋の照明を少しだけ暗くしてみましょう。光の刺激が下がり、身体が休む方向へ切り替わりやすくなります。' },
+      { id: 46, category: 'F', title: '窓を数分だけ開ける', desc: '窓を数分だけ開けて、空気を入れ替えてみましょう。温度や匂いの変化で感覚がリセットされます。' },
+      { id: 47, category: 'F', title: '寝具を少し冷やす', desc: '寝る前に寝具を少しひんやりさせてみましょう。肌に触れたときの温度差が、心地よい刺激になります。' },
+      { id: 48, category: 'F', title: '机の上に何もない面を作る', desc: '机の上に小さな空白スペースを作ってみましょう。視覚的な散らかりが減り、すっきりした快さが出ます。' },
+      { id: 49, category: 'F', title: '椅子の高さを微調整する', desc: '椅子の高さを少しだけ変えてみましょう。姿勢の負担が減ると、身体が楽になった感覚がはっきりします。' },
+      { id: 50, category: 'F', title: 'ディスプレイの輝度を下げる', desc: '画面の明るさを少し下げてみましょう。目への刺激が減り、静かな楽さを感じやすくなります。' },
+      { id: 51, category: 'F', title: '空気を少し加湿する', desc: '部屋の湿度を少し上げてみましょう。鼻や喉や肌の乾きがやわらぎ、全体の快適さが上がります。' },
+
+      { id: 52, category: 'G', title: '温かい汁物を最初に飲む', desc: '食事の最初に温かい汁物を少し飲んでみましょう。胃が温まり、安心感と満足感が出やすくなります。' },
+      { id: 53, category: 'G', title: '酸味を少量使う', desc: 'レモンや酢などの酸味を少し加えてみましょう。唾液が出やすくなり、口の中がさっぱりします。' },
+      { id: 54, category: 'G', title: '苦味を少し味わう', desc: 'コーヒーやお茶などの苦味を少しゆっくり味わってみましょう。苦味のあとに残る香りや余韻が心地よく感じられます。' },
+      { id: 55, category: 'G', title: '塩味を意識して味わう', desc: '塩味を少しだけ意識して味わってみましょう。味の輪郭がはっきりし、少量でも満足感が出やすくなります。' },
+      { id: 56, category: 'G', title: '温度差のある食べ物を組み合わせる', desc: '温かい飲み物と冷たいものなど、温度差を少し楽しんでみましょう。温と冷の対比で、感覚がはっきりします。' },
+      { id: 57, category: 'G', title: '噛む回数を増やす', desc: '一口ごとに少し多めに噛んでみましょう。食感と香りを感じる時間が増え、満足感が高まりやすくなります。' },
+      { id: 58, category: 'G', title: '香りを先に嗅いでから食べる', desc: '食べる前に香りをゆっくり感じてみましょう。嗅覚が先に働くことで、味の満足感が増しやすくなります。' },
+
+      { id: 59, category: 'H', title: '軽いスクワットを10回だけする', desc: '軽いスクワットを10回だけしてみましょう。大きな筋肉が動くことで血流が変わり、気分が切り替わりやすくなります。' },
+      { id: 60, category: 'H', title: '背伸びを長めにする', desc: '腕を上げて、少し長めに背伸びしてみましょう。胸や肋骨まわりが広がり、呼吸が入りやすくなります。' },
+      { id: 61, category: 'H', title: 'ふくらはぎを動かす', desc: 'かかとを上げ下げして、ふくらはぎを動かしてみましょう。下半身の血流が戻り、頭がすっきりしやすくなります。' },
+      { id: 62, category: 'H', title: '首をゆっくり傾ける', desc: '首を大きく回さず、左右にゆっくり傾けてみましょう。無理のない伸び感が出て、首まわりが楽になります。' },
+      { id: 63, category: 'H', title: '肩をすくめて一気に落とす', desc: '肩をぎゅっとすくめてから、一気に落としてみましょう。緊張と脱力の差がはっきりし、力が抜ける感覚が出ます。' },
+      { id: 64, category: 'H', title: '握力を使ってから脱力する', desc: 'タオルなどを軽く握ってから、手をゆるめてみましょう。緊張のあとに来る弛緩が、気持ちよく感じられます。' },
+      { id: 65, category: 'H', title: '散歩中に歩幅を少し変える', desc: '散歩中に歩幅を少しだけ変えてみましょう。いつもの歩き方に新鮮さが生まれ、身体感覚が変わります。' },
+      { id: 66, category: 'H', title: '階段を少しだけ使う', desc: '階段を少しだけ使ってみましょう。軽く心拍が上がり、短時間でも気分転換になりやすくなります。' },
+
+      { id: 67, category: 'I', title: '短い感謝メッセージを書く', desc: '誰かへの感謝を一文だけ書いてみましょう。送らなくても、感謝を言葉にすると気分が安定しやすくなります。' },
+      { id: 68, category: 'I', title: '自分の考えを一文で要約する', desc: '今考えていることを一文にまとめてみましょう。曖昧だったものが形になり、頭が整理された感じが出ます。' },
+      { id: 69, category: 'I', title: '好きな作品のよかった点を3つ書く', desc: '好きな作品のよかった点を3つ書いてみましょう。楽しかった体験を再確認でき、余韻が深まりやすくなります。' },
+      { id: 70, category: 'I', title: '過去の自分に説明するつもりでメモを書く', desc: '昔の自分に教えるつもりで、短いメモを書いてみましょう。考えが整理され、理解が定着する気持ちよさが出ます。' },
+      { id: 71, category: 'I', title: '誰かに説明する前提で勉強する', desc: '誰かに説明するつもりで、少しだけ学んでみましょう。内容を自然に整理するため、理解が深まった快さが出ます。' },
+      { id: 72, category: 'I', title: '短い音読をする', desc: '短い文章を声に出して読んでみましょう。目、耳、声が同時に働き、文章が身体に入る感じが出ます。' },
+
+      { id: 73, category: 'J', title: '昼寝前に温かい飲み物を飲む', desc: '昼寝の前に温かい飲み物を少し飲んでみましょう。身体がゆるみ、休息へ入りやすくなります。' },
+      { id: 74, category: 'J', title: '10〜20分だけ横になる', desc: '10〜20分だけ横になってみましょう。眠らなくても、重力から離れるだけで身体が楽になります。' },
+      { id: 75, category: 'J', title: '寝る前に明日の最初の行動だけ決める', desc: '寝る前に、明日の最初の行動を一つだけ決めてみましょう。迷いが減り、安心して眠りに入りやすくなります。' },
+      { id: 76, category: 'J', title: '布団で足先だけ意識する', desc: '布団の中で足先の感覚だけに注意を向けてみましょう。思考が身体感覚へ移り、頭が静まりやすくなります。' },
+      { id: 77, category: 'J', title: '寝る前に紙を見る', desc: '寝る前に画面ではなく紙を少し見てみましょう。光や通知の刺激が少なく、眠気へ移りやすくなります。' },
+      { id: 78, category: 'J', title: '起床後すぐにカーテンを開ける', desc: '起きたらすぐにカーテンを開けてみましょう。朝の光で体内時計が整いやすく、頭がすっきりしやすくなります。' },
+
+      { id: 79, category: 'K', title: '知らない分野の入門記事を一つ読む', desc: '知らない分野の入門記事を一つ読んでみましょう。新しい概念を一つ得るだけでも、好奇心が満たされます。' },
+      { id: 80, category: 'K', title: '系統図・年表・地図を見る', desc: '系統図や年表や地図を眺めてみましょう。情報のつながりが見えると、理解する気持ちよさが出ます。' },
+      { id: 81, category: 'K', title: 'Wikipediaのリンクを3つだけ辿る', desc: 'Wikipediaなどでリンクを3つだけ辿ってみましょう。小さな探索に制限をつけると、発見と満足感のバランスがよくなります。' },
+      { id: 82, category: 'K', title: '辞書をランダムに開く', desc: '辞書や用語集をランダムに開いてみましょう。思いがけない言葉との出会いが、小さな知的刺激になります。' },
+      { id: 83, category: 'K', title: '古い技術文書を読む', desc: '古い説明書や昔の記事を少し読んでみましょう。今との違いや背景が見えて、文脈を理解する面白さが出ます。' },
+      { id: 84, category: 'K', title: '身近なものを別分野の比喩で説明する', desc: '身近な仕組みを別のものにたとえて説明してみましょう。ものごとの構造が見え直し、理解が整理されます。' },
+      { id: 85, category: 'K', title: '困りごとの原因を仮説として3つ並べる', desc: '小さな困りごとの原因を3つだけ考えてみましょう。曖昧な問題が分解され、見通しが立つ気持ちよさが出ます。' },
+      { id: 86, category: 'K', title: '日記や記録からパターンを探す', desc: '日記や家計簿や歩数記録を眺めて、パターンを探してみましょう。ばらばらの情報に規則性が見えると、知的な快さが出ます。' },
+
+      { id: 87, category: 'L', title: '利き手でない方の手で歯を磨く', desc: '利き手でない方の手で歯を磨いてみましょう。慣れた動きが新鮮になり、軽い脳の刺激になります。' },
+      { id: 88, category: 'L', title: 'いつもと違う道を歩く', desc: 'いつもと少し違う道を歩いてみましょう。小さな新しさが入り、退屈がほどよく崩れます。' },
+      { id: 89, category: 'L', title: '左右反転した画像を見る', desc: '写真や部屋の画像を左右反転して見てみましょう。見慣れたものが少し違って見え、新鮮な違和感を楽しめます。' },
+      { id: 90, category: 'L', title: '音楽を片耳だけで聴く', desc: '音楽を短時間だけ片耳で聴いてみましょう。普段聞き流している細部に気づきやすくなります。' },
+      { id: 91, category: 'L', title: '暗闇で手触りだけで物を判別する', desc: '目を閉じて、手触りだけで身近な物を判別してみましょう。触覚への集中が、ちょっとした遊びになります。' },
+      { id: 92, category: 'L', title: '本を途中のページから読む', desc: '辞典やエッセイを途中のページから読んでみましょう。偶然の断片に出会うことで、小さな発見があります。' },
+      { id: 93, category: 'L', title: '文字を極端にゆっくり書く', desc: '文字をいつもより極端にゆっくり書いてみましょう。手の動きに注意が向き、軽い瞑想のような感覚が出ます。' },
+      { id: 94, category: 'L', title: '同じ文章をフォント違いで見る', desc: '同じ文章を違うフォントで見てみましょう。文字の印象が変わり、見た目の違いを楽しめます。' },
+      { id: 95, category: 'L', title: 'キーボードを丁寧に打鍵する', desc: 'キーボードを一打ずつ丁寧に打ってみましょう。音や反発やリズムに注意が向き、入力そのものが心地よくなります。' },
+      { id: 96, category: 'L', title: '古い写真の背景だけを見る', desc: '古い写真の背景だけを眺めてみましょう。看板や服装や家具から時代感を発見する楽しさがあります。' },
+      { id: 97, category: 'L', title: 'お気に入り作品の一場面だけ再視聴する', desc: '好きな作品の印象的な場面だけを見返してみましょう。記憶と期待が重なり、短時間でも満足感が出ます。' },
+      { id: 98, category: 'L', title: '短いループ音楽を流す', desc: '短いループ音楽を小さく流してみましょう。変化が少ない音が背景になり、集中しやすくなります。' },
+      { id: 99, category: 'L', title: '香りの記憶を掘る', desc: '雨、木材、古本、石鹸などの香りを思い出してみましょう。匂いの記憶は感情と結びつきやすく、懐かしい快さが出ます。' },
+      { id: 100, category: 'L', title: '「今日はこれで十分」と明示する', desc: '一日の終わりに「今日はこれで十分」と言葉にしてみましょう。未完了感が少し閉じ、安心に近い快さが出ます。' }
+    ];
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function pickRandom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function drawThreeUniqueGenreCards() {
+      const categories = [...new Set(tips.map(t => t.category))];
+      const chosenCategories = shuffle(categories).slice(0, 3);
+      const selected = chosenCategories.map(category => {
+        const pool = tips.filter(t => t.category === category);
+        return pickRandom(pool);
+      });
+      return shuffle(selected);
+    }
+
+    function render(cards) {
+      const container = document.getElementById('cards');
+      const summary = document.getElementById('summary');
+      container.innerHTML = '';
+
+      const genreNames = cards.map(card => categoryMeta[card.category].label);
+      summary.textContent = `今回の3ジャンル: ${genreNames.join(' / ')}`;
+
+      cards.forEach(card => {
+        const meta = categoryMeta[card.category];
+        const article = document.createElement('article');
+        article.className = 'card';
+        article.style.setProperty('--badge-color', meta.color);
+        article.style.setProperty('--line-color', meta.line);
+        article.innerHTML = `
+          <div class="card-head">
+            <div class="num">No.${card.id.toString().padStart(3, '0')}</div>
+            <div class="badge">${meta.label}</div>
+          </div>
+          <h2 class="title">${card.title}</h2>
+          <p class="desc">${card.desc}</p>
+        `;
+        container.appendChild(article);
+      });
+    }
+
+    function drawAndRender() {
+      render(drawThreeUniqueGenreCards());
+    }
+
+    document.getElementById('drawButton').addEventListener('click', drawAndRender);
+    drawAndRender();
+  </script>
+</body>
+</html>
